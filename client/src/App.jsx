@@ -102,15 +102,17 @@ function getDashboardPath(user) {
     return "/login";
   }
 
-  if (user.role === "patient") {
+  const role = String(user.role || "").trim().toLowerCase();
+
+  if (role === "patient") {
     return "/patient/dashboard";
   }
 
-  if (user.role === "doctor") {
+  if (role === "doctor") {
     return "/doctor/dashboard";
   }
 
-  if (user.role === "receptionist") {
+  if (role === "receptionist") {
     return "/reception/dashboard";
   }
 
@@ -125,6 +127,7 @@ function getDashboardPath(user) {
 function ProtectedRoute({ children, role }) {
 
   const { user, loading } = useAuth();
+  const currentRole = String(user?.role || "").trim().toLowerCase();
 
   if (loading) {
     return <Spinner />;
@@ -134,7 +137,7 @@ function ProtectedRoute({ children, role }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (role && user.role !== role) {
+  if (role && currentRole !== role) {
     return (
       <Navigate
         to={getDashboardPath(user)}

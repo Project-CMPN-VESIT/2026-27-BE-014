@@ -101,7 +101,13 @@ export default function LoginPage() {
       const user = userCredential.user;
 
       const serverUser = await exchangeFirebaseSession(user, { role });
-      const authenticatedRole = serverUser.role;
+      const authenticatedRole = String(serverUser.role || "")
+        .trim()
+        .toLowerCase();
+
+      if (!["patient", "doctor", "receptionist"].includes(authenticatedRole)) {
+        throw new Error("The account has an invalid role. Please contact an administrator.");
+      }
 
       console.log(
         "Firebase login successful:",

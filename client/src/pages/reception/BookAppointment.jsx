@@ -47,7 +47,8 @@ export default function ReceptionBook() {
   }, [form.doctorId, form.date])
 
   const filteredPatients = patients.filter(p =>
-    p.userId?.role === 'patient' && (!search || p.userId?.name?.toLowerCase().includes(search.toLowerCase()))
+    !search ||
+    (p.userId?.name || p.name || '').toLowerCase().includes(search.toLowerCase())
   )
 
   async function handleSubmit(e) {

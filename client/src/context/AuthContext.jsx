@@ -2,6 +2,7 @@ import React, {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -23,6 +24,30 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
+  const userRef = useRef(null);
+
+  const updateUser = (nextUser, { force = false } = {}) => {
+    if (!force && nextUser === null && userRef.current) {
+      return;
+    }
+
+    if (
+      !force &&
+      nextUser &&
+      userRef.current &&
+      nextUser.uid &&
+      userRef.current.uid === nextUser.uid
+    ) {
+      nextUser = {
+        ...userRef.current,
+        ...nextUser,
+        role: userRef.current.role || nextUser.role,
+      };
+    }
+
+    userRef.current = nextUser;
+    setUser(nextUser);
+  };
 
   const verifyServerSession = async (timeoutMs = 1200) => {
     return Promise.race([
@@ -83,7 +108,7 @@ export function AuthProvider({ children }) {
             specialization: serverUser.specialization || "",
           };
 
-          setUser(userData);
+          updateUser(userData);
           setToken(serverUser.token || null);
           setLoading(false);
           return;
@@ -96,7 +121,7 @@ export function AuthProvider({ children }) {
         unsubscribeFromAuth = onAuthStateChanged(auth, async (firebaseUser) => {
           if (!firebaseUser) {
             if (isMounted) {
-              setUser(null);
+              updateUser(null);
               setToken(null);
               setLoading(false);
             }
@@ -118,14 +143,14 @@ export function AuthProvider({ children }) {
             };
 
             if (isMounted) {
-              setUser(nextUser);
+              updateUser(nextUser);
               setToken(idToken);
               setLoading(false);
             }
           } catch (error) {
             console.error("Auth error:", error);
             if (isMounted) {
-              setUser(null);
+              updateUser(null);
               setToken(null);
               setLoading(false);
             }
@@ -161,12 +186,20 @@ export function AuthProvider({ children }) {
       console.error("Logout error:", error);
     }
 
-    setUser(null);
+    updateUser(null, { force: true });
     setToken(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, logout, token }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser: (nextUser) => updateUser(nextUser, { force: true }),
+        loading,
+        logout,
+        token,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
